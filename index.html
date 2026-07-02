@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test na skúšky odbornej spôsobilosti - Typ S</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; font-size: 24px; line-height: 1.4; text-align: center; margin-bottom: 20px;}
+        h2 { color: #2c3e50; }
+        button { background-color: #3498db; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background 0.3s; width: 100%; max-width: 300px; display: block; margin: 20px auto 0 auto;}
+        button:hover { background-color: #2980b9; }
+        .btn-skrateny { background-color: #27ae60; }
+        .btn-skrateny:hover { background-color: #219150; }
+        .hidden { display: none !important; }
+        
+        /* Top panel (Timer & Stats) */
+        .top-panel { display: flex; justify-content: space-between; align-items: center; background: #2c3e50; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; }
+        .casomiera { font-size: 22px; font-weight: bold; color: #f1c40f; display: flex; align-items: center; gap: 10px; }
+        .casomiera.warning { color: #e74c3c; animation: pulse 1s infinite; }
+        
+        /* Otazky a moznosti */
+        .otazka-text { font-size: 18px; font-weight: 600; margin-bottom: 20px; line-height: 1.5; }
+        .moznost { background: #ecf0f1; margin: 10px 0; padding: 15px; border-radius: 5px; cursor: pointer; transition: background 0.2s; border: 2px solid transparent; }
+        .moznost:hover { background: #d5dbdb; }
+        .moznost label { cursor: pointer; display: flex; align-items: flex-start; width: 100%; }
+        .moznost input { margin-right: 15px; margin-top: 5px; transform: scale(1.3); }
+        
+        /* Vyhodnocovacie farby */
+        .spravna-vyber { background-color: #d4edda !important; border-color: #27ae60 !important; }
+        .nespravna-vyber { background-color: #f8d7da !important; border-color: #c0392b !important; }
+        
+        /* Sumár na konci */
+        .sumar-box { margin-top: 30px; text-align: left; }
+        .sumar-polozka { padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fdfdfd; border-left: 6px solid #27ae60; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .sumar-polozka.chyba { border-left-color: #c0392b; background: #fff5f5; }
+        .sumar-otazka { font-weight: bold; margin-bottom: 8px; }
+        .sumar-odpoved { margin: 4px 0; }
+        
+        /* Status hodnotenia */
+        .status-hodnotenia { font-size: 24px; font-weight: bold; margin: 15px 0; padding: 10px; border-radius: 5px; }
+        .status-uspesne { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-neuspesne { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- Úvodná obrazovka -->
+    <div class="container" id="uvod">
+        <h1>Test na skúšky odbornej spôsobilosti na získanie preukazu typu "S" podľa zákona č. 473/2005 Z.z. o súkromnej bezpečnosti.</h1>
+        <div style="background: #ecf0f1; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <p><strong>Vyberte si verziu testu:</strong></p>
+            <ul style="margin-bottom: 15px;">
+                <li><strong>Plný test:</strong> 40 otázok (10+20+10), limit 40 minút, max 80 bodov.</li>
+                <li><strong>Skrátený test:</strong> 20 otázok (5+10+5), limit 20 minút, max 40 bodov.</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>Hranica úspešnosti:</strong> 80 % pre obe verzie.</p>
+        </div>
+        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="spustiTest('plny')" style="margin: 0;">Plný test (40 min)</button>
+            <button onclick="spustiTest('skrateny')" class="btn-skrateny" style="margin: 0;">Skrátený test (20 min)</button>
+        </div>
+    </div>
+    
+    <!-- Testovacia obrazovka -->
+    <div class="container hidden" id="test-container">
+        <div class="top-panel">
+            <div>
+                <div id="cislo-otazky" style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">Otázka 1 / 40</div>
+                <div id="info-kategoria" style="font-size: 14px; color: #bdc3c7;">Kategória | Body</div>
+            </div>
+            <div class="casomiera" id="casomiera-box">
+                ⏱ <span id="cas">40:00</span>
+            </div>
+        </div>
+
+        <div class="otazka-text" id="znenie-otazky"></div>
+        <div id="moznosti-container"></div>
+        
+        <button onclick="spracujAkciu()" id="akcia-btn">Skontrolovať odpoveď</button>
+    </div>
+
+    <!-- Výsledková obrazovka -->
+    <div class="container hidden" id="vysledok-container" style="text-align: center;">
+        <h1>Záverečné hodnotenie</h1>
+        <div id="zaverecny-status" class="status-hodnotenia"></div>
+        <h2 id="skore" style="font-size: 40px; margin: 10px 0;"></h2>
+        <p id="percenta" style="font-size: 22px; font-weight: bold; margin-top: 0;"></p>
+        
+        <button onclick="location.reload()">Opakovať test</button>
+
+        <div class="sumar-box" id="detailny-sumar">
+            <!-- Tu sa vygeneruje zoznam otázok -->
+        </div>
+    </div>
+
+    <script src="otazky.js"></script>
+
+    <script>
+        // --- LOGIKA TESTU ---
+        let vybranyTest = [];
+        let aktualnaOtazkaIndex = 0;
+        let dosiahnuteBody = 0;
+        let historiaOdpovedi = []; 
+        let stavZodpovedane = false; 
+        let timerInterval;
+        
+        // Dynamické nastavenia
+        let zostavajuciCas = 0; 
+        let maxBodov = 80;
+        let celkovyPocetOtazok = 40;
+
+        function formatujCas(sekundy) {
+            let m = Math.floor(sekundy / 60);
+            let s = sekundy % 60;
+            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function spustiCasomieru() {
+            document.getElementById('cas').innerText = formatujCas(zostavajuciCas);
+            
+            timerInterval = setInterval(() => {
+                zostavajuciCas--;
+                document.getElementById('cas').innerText = formatujCas(zostavajuciCas);
+                
+                if (zostavajuciCas <= 300) {
+                    document.getElementById('casomiera-box').classList.add('warning');
+                }
+                
+                if (zostavajuciCas <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Čas vypršal! Test bude automaticky vyhodnotený.");
+                    ukonciTest();
+                }
+            }, 1000);
+        }
+
+        function spustiTest(typ) {
+            if (typeof vsetkyOtazky === 'undefined' || vsetkyOtazky.length === 0) {
+                alert("Databáza otázok sa ešte nenačítala alebo súbor chýba.");
+                return;
+            }
+            
+            let kosOstatne = vsetkyOtazky.filter(o => o.kategoria === 'ostatne_pravo');
+            let kosZakon = vsetkyOtazky.filter(o => o.kategoria === 'zakon_sbs');
+            let kosPrakticke = vsetkyOtazky.filter(o => o.kategoria === 'prakticke');
+
+            let pocetOstatne, pocetZakon, pocetPrakticke;
+
+            // Nastavenie premenných podľa typu testu
+            if (typ === 'skrateny') {
+                pocetOstatne = 5;
+                pocetZakon = 10;
+                pocetPrakticke = 5;
+                zostavajuciCas = 20 * 60; // 20 minút
+                maxBodov = 40;
+                celkovyPocetOtazok = 20;
+            } else {
+                pocetOstatne = 10;
+                pocetZakon = 20;
+                pocetPrakticke = 10;
+                zostavajuciCas = 40 * 60; // 40 minút
+                maxBodov = 80;
+                celkovyPocetOtazok = 40;
+            }
+
+            vybranyTest = [
+                ...shuffle(kosOstatne).slice(0, pocetOstatne),
+                ...shuffle(kosZakon).slice(0, pocetZakon),
+                ...shuffle(kosPrakticke).slice(0, pocetPrakticke)
+            ];
+            
+            document.getElementById('uvod').classList.add('hidden');
+            document.getElementById('test-container').classList.remove('hidden');
+            
+            spustiCasomieru();
+            zobrazOtazku();
+        }
+
+        function zobrazOtazku() {
+            stavZodpovedane = false;
+            document.getElementById('akcia-btn').innerText = "Skontrolovať odpoveď";
+            
+            let otazka = vybranyTest[aktualnaOtazkaIndex];
+            let kategoriaNazov = "";
+            if(otazka.kategoria === "ostatne_pravo") kategoriaNazov = "Ostatné právne predmety";
+            if(otazka.kategoria === "zakon_sbs") kategoriaNazov = "Zákon o SBS a vyhláška";
+            if(otazka.kategoria === "prakticke") kategoriaNazov = "Praktické otázky";
+
+            document.getElementById('cislo-otazky').innerText = `Otázka ${aktualnaOtazkaIndex + 1} / ${celkovyPocetOtazok}`;
+            document.getElementById('info-kategoria').innerText = `${kategoriaNazov} (${otazka.body} ${otazka.body === 1 ? 'bod' : 'body'})`;
+            document.getElementById('znenie-otazky').innerText = otazka.otazka;
+            
+            let moznostiHTML = '';
+            for (let pismeno in otazka.moznosti) {
+                moznostiHTML += `<div class="moznost" id="moznost-${pismeno}">
+                    <label>
+                        <input type="radio" name="odpoved" value="${pismeno}">
+                        <b>${pismeno})</b> ${otazka.moznosti[pismeno]}
+                    </label>
+                </div>`;
+            }
+            document.getElementById('moznosti-container').innerHTML = moznostiHTML;
+        }
+
+        function spracujAkciu() {
+            let otazka = vybranyTest[aktualnaOtazkaIndex];
+            
+            if (!stavZodpovedane) {
+                let vybranaOdpoved = document.querySelector('input[name="odpoved"]:checked');
+                if (!vybranaOdpoved) {
+                    alert("Musíte označiť aspoň jednu odpoveď.");
+                    return;
+                }
+                
+                stavZodpovedane = true;
+                let uzivatelTip = vybranaOdpoved.value;
+                let spravnaOdpoved = otazka.spravna;
+                let jeSpravne = (uzivatelTip === spravnaOdpoved);
+
+                document.querySelectorAll('input[name="odpoved"]').forEach(input => input.disabled = true);
+
+                document.getElementById(`moznost-${spravnaOdpoved}`).classList.add('spravna-vyber');
+                if (!jeSpravne) {
+                    document.getElementById(`moznost-${uzivatelTip}`).classList.add('nespravna-vyber');
+                } else {
+                    dosiahnuteBody += otazka.body;
+                }
+
+                historiaOdpovedi.push({
+                    cislo: aktualnaOtazkaIndex + 1,
+                    otazkaText: otazka.otazka,
+                    uzivatelText: otazka.moznosti[uzivatelTip],
+                    spravnaText: otazka.moznosti[spravnaOdpoved],
+                    jeSpravne: jeSpravne,
+                    body: otazka.body
+                });
+
+                document.getElementById('akcia-btn').innerText = "Pokračovať na ďalšiu otázku";
+
+            } else {
+                aktualnaOtazkaIndex++;
+                if (aktualnaOtazkaIndex < vybranyTest.length) {
+                    zobrazOtazku();
+                } else {
+                    ukonciTest();
+                }
+            }
+        }
+
+        function ukonciTest() {
+            clearInterval(timerInterval);
+            document.getElementById('test-container').classList.add('hidden');
+            document.getElementById('vysledok-container').classList.remove('hidden');
+            
+            document.getElementById('skore').innerText = `${dosiahnuteBody} / ${maxBodov} bodov`;
+            
+            let percenta = (dosiahnuteBody / maxBodov) * 100;
+            let percentaText = document.getElementById('percenta');
+            let statusBox = document.getElementById('zaverecny-status');
+
+            percentaText.innerText = `Celková úspešnosť: ${percenta.toFixed(1)}%`;
+            
+            if(percenta >= 80) {
+                percentaText.style.color = "#27ae60";
+                statusBox.innerText = "Test bol absolvovaný úspešne";
+                statusBox.className = "status-hodnotenia status-uspesne";
+            } else {
+                percentaText.style.color = "#c0392b";
+                statusBox.innerText = "Test bol absolvovaný neúspešne";
+                statusBox.className = "status-hodnotenia status-neuspesne";
+            }
+
+            let sumarHTML = "<h3 style='font-size: 22px; color: #2c3e50; text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;'>Detailný zoznam odpovedí</h3>";
+            
+            historiaOdpovedi.forEach(polozka => {
+                let trieda = polozka.jeSpravne ? 'sumar-polozka' : 'sumar-polozka chyba';
+                let farbaUzivatel = polozka.jeSpravne ? '#27ae60' : '#c0392b';
+                
+                sumarHTML += `<div class="${trieda}">
+                    <div class="sumar-otazka">${polozka.cislo}. ${polozka.otazkaText} (${polozka.body} b)</div>
+                    <div class="sumar-odpoved"><b>Vaša odpoveď:</b> <span style="color: ${farbaUzivatel}; font-weight: bold;">${polozka.uzivatelText}</span></div>`;
+                
+                if (!polozka.jeSpravne) {
+                    sumarHTML += `<div class="sumar-odpoved"><b>Správna odpoveď:</b> <span style="color: #27ae60; font-weight: bold;">${polozka.spravnaText}</span></div>`;
+                }
+                
+                sumarHTML += `</div>`;
+            });
+            
+            document.getElementById('detailny-sumar').innerHTML = sumarHTML;
+        }
+
+        function shuffle(array) {
+            let curr = array.length, rnd;
+            while (curr != 0) {
+                rnd = Math.floor(Math.random() * curr);
+                curr--;
+                [array[curr], array[rnd]] = [array[rnd], array[curr]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
